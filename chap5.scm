@@ -256,7 +256,200 @@
     (p- poly1 (p* poly2 (poly-quotient poly1 poly2)))
     ))
 
-  
+(define digits->poly
+  (lambda (digit-list)
+    (if (null? digit-list)
+	(error "digits->poly: Not defined for empty lst")
+	(letrec
+	    ((make-poly
+	      (lambda (deg ls)
+		(if (null? ls)
+		    the-zero-poly
+		    (poly-cons
+		     deg
+		     (car ls)
+		     (make-poly (sub1 deg)
+				(cdr ls)))))))
+	  (make-poly (sub1 (length digit-list))
+		     digit-list)))
+    ))
+
+(define binary->decimal
+  (lambda (digit-list)
+    (poly-value (digits->poly digit-list) 2)))
+
+(define octal->decimal
+  (lambda (digit-list)
+    (poly-value (digits->poly digit-list) 8)))
+
+(define hexadecimal->decimal
+  (lambda (digit-list)
+    (poly-value (digits->poly digit-list) 16)))
+
+(define deci->decimal
+  (lambda (digit-list)
+    (poly-value (digits->poly digit-list) 10)))
+
+(define poly->digits
+  (lambda (poly)
+    (letrec
+	((convert
+	  (lambda (p deg)
+	    (cond
+	     ((zero? deg) (list (leading-coef p)))
+	     ((= (degree p) deg)
+	      (cons (leading-coef p)
+		    (convert (rest-of-poly p)
+			     (sub1 deg))))
+	     (else
+	      (cons 0 (convert p
+			       (sub1 deg))))))))
+      (convert poly (degree poly)))
+    ))
+
+(define decimal->binary
+  (lambda (num)
+    (letrec
+	((dec->bin
+	  (lambda (n deg)
+	    (if (zero? n)
+		the-zero-poly
+		(p+ (make-term deg
+			       (remainder n 2))
+		    (dec->bin (quotient n 2)
+			      (add1 deg)))))))
+      (poly->digits (dec->bin num 0)))
+    ))
+
+(define decimal->octal
+  (lambda (num)
+    (letrec
+	((dec->bin
+	  (lambda (n deg)
+	    (if (zero? n)
+		the-zero-poly
+		(p+ (make-term deg
+			       (remainder n 8))
+		    (dec->bin (quotient n 8)
+			      (add1 deg)))))))
+      (poly->digits (dec->bin num 0)))
+    ))
+
+(define decimal->hexadecimal
+  (lambda (num)
+    (letrec
+	((dec->bin
+	  (lambda (n deg)
+	    (if (zero? n)
+		the-zero-poly
+		(p+ (make-term deg
+			       (remainder n 16))
+		    (dec->bin (quotient n 16)
+			      (add1 deg)))))))
+      (poly->digits (dec->bin num 0)))
+    ))
+(define decimal->deci
+  (lambda (num)
+    (letrec
+	((dec->bin
+	  (lambda (n deg)
+	    (if (zero? n)
+		the-zero-poly
+		(p+ (make-term deg
+			       (remainder n 10))
+		    (dec->bin (quotient n 10)
+			      (add1 deg)))))))
+      (poly->digits (dec->bin num 0)))
+    ))
+(define change-base2
+  (lambda (digit-list base)
+    (cond
+     ((= base 16) (decimal->hexadecimal
+		   (binary->decimal digit-list)
+		   ))
+     ((= base 8) (decimal->octal
+		  (binary->decimal digit-list)
+		  ))
+     ((= base 10) (decimal->deci
+		   (binary->decimal digit-list)
+		   ))
+     (else
+      (error "Error: change-base unsupported base" base)))
+    ))
+
+(define change-base8
+  (lambda (digit-list base)
+    (cond
+     ((= base 16) (decimal->hexadecimal
+		   (octal->decimal digit-list)
+		   ))
+     ((= base 2) (decimal-binary
+		  (octal->decimal digit-list)
+		  ))
+     ((= base 10) (decimal->deci
+		   (octal->decimal digit-list)
+		   ))
+     (else
+      (error "Error: change-base unsupported base" base)))
+    ))
+
+(define change-base10
+  (lambda (digit-list base)
+    (cond
+     ((= base 16) (decimal->hexadecimal
+		   (deci->decimal digit-list)
+		   ))
+     ((= base 8) (decimal->octal
+		  (deci->decimal digit-list)
+		  ))
+     ((= base 2) (decimal-binary
+		  (deci->decimal digit-list)
+		  ))
+     (else
+      (error "Error: change-base unsupported base" base)))
+    ))
+(define change-base16
+  (lambda (digit-list base)
+    (cond
+     ((= base 2) (decimal-binary
+		  (hexadecimal->decimal digit-list)
+		  ))
+     ((= base 8) (decimal->octal
+		  (hexadecimal->decimal digit-list)
+		  ))
+     ((= base 10) (decimal->deci
+		   (hexadecimal->decimal digit-list)
+		   ))
+     (else
+      (error "Error: change-base unsupported base" base)))
+    ))
+
+(define change-base
+  (lambda (digit-list base1 base2)
+    (cond
+     ((= base1 16) (change-base16 digit-list base2))
+     ((= base1 8) (change-base8 digit-list base2))
+     ((= base1 10) (change-base10 digit-list base2))
+     ((= base1 2) (change-base2 digit-list base2))
+     (else
+      (error "Error: change-base unsupported base" base1)))
+    ))
+      
+(define binary-sum
+  (lambda (digit-list1 digit-list2)
+    (decimal-binary
+     (+ (binary->decimal digit-list1)
+	(binary->decimal digit-list2)))
+    ))
+    
+(define binary-product
+  (lambda (digit-list1 digit-list2)
+    (decimal-binary
+     (* (binary->decimal digit-list1)
+	(binary->decimal digit-list2)))
+    ))
+
+
 
 ;; Here goes the test
 (writeln "Here goes the test -->")
@@ -280,3 +473,20 @@ p1
 (p* '(2) '(1 1))
 (poly-quotient '(5 2 1 1) '(1 1))
 (poly-remainder '(5 2 1 1) '(1 1))
+(binary->decimal '(1 1 0 0 1 1 0 1))
+(poly->digits (digits->poly '(1 1 0 1 0 1)))
+(binary->decimal (decimal-binary 143))
+
+(decimal->binary 53)
+(decimal->binary 5)
+(decimal->binary 404)
+(binary->decimal '(1 0 1 0 1 0 1 0))
+(decimal->octal 12)
+(decimal->hexadecimal 128)
+
+(change-base '(5 11) 16 8)
+(change-base '(6 6 2) 8 2)
+(change-base '(1 0 1 1 1 1 1 0 1) 2 16)
+
+(binary-sum '( 1 1) '(1 1))
+(binary-product '(1 1) '(1 1))
