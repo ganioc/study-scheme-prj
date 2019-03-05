@@ -54,3 +54,9 @@
 		      poly)))))
     ))
 
+(define identity
+  (lambda (x)
+    x))
+(define one?
+  (lambda (x)
+    (not (zero? x))))
