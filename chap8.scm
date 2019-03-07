@@ -1,5 +1,6 @@
 ;; chap8.scm
 (load "util.scm")
+
 (define both
   (lambda (pred)
     (lambda (arg1 arg2)
@@ -154,10 +155,10 @@
   (lambda (obj1)
     (lambda (obj2)
       (or (and ((neither set?) obj1 obj2)
-	       (equal? obj1 obj2))
-	  (and ((both set?) obj1 obj2)
-	       ((subset obj1) obj2)
-	       ((subset obj2) obj1))))
+      	       (equal? obj1 obj2))
+      	  (and ((both set?) obj1 obj2)
+      	       ((subset obj1) obj2)
+      	       ((subset obj2) obj1))))
     ))
 
 (define set-equal?
@@ -178,7 +179,7 @@
 (define contains
   (lambda (set)
     (lambda (obj)
-      ((elememt obj) set))))
+      ((element obj) set))))
 
 ;; if s2 is a superset of s1
 (define superset
@@ -247,6 +248,82 @@
 		      (helper (residue elem) s1)))))))
       (helper s1))))
 
+(define set-builder
+  (lambda (pred base-set)
+    (letrec
+	((helper
+	  (lambda (s)
+	    (if (empty-set? s)
+		base-set
+		(let ((elem (pick s)))
+		  (if (pred elem)
+		      (adjoin elem (helper
+				    ((residue elem) s)))
+		      (helper ((residue elem) s))))))))
+      helper)))
+
+(define intersection
+  (lambda (s1 s2)
+    ((set-builder (contains s2) the-empty-set) s1)))
+
+(define union
+  (lambda (s1 s2)
+    ((set-builder (compose not (contains s2)) s2) s1)))
+
+(define difference
+  (lambda (s1 s2)
+    ((set-builder (compose not (contains s2)) the-empty-set)
+     s1)))
+
+;; union sets
+(define family-union
+  (lambda (s)
+    (if (empty-set? s)
+	the-empty-set
+	(let ((elem (pick s)))
+	  (union elem (family-union ((residue elem) s)))))
+    ))
+
+(define family-intersection
+  (lambda (s)
+    (if (empty-set? s)
+	the-empty-set
+	(letrec
+	    ((fam-int
+	      (lambda (s)
+		(let ((elem (pick s)))
+		  (let ((rest ((residue elem) s)))
+		    (if (empty-set? rest)
+			elem
+			(intersection elem (fam-int rest))))))))
+	  (fam-int s)))))
+
+(define list->set
+  (lambda (ls)
+    (apply make-set ls)))
+
+(define set->list
+  (lambda (s)
+    (if (empty-set? s)
+	'()
+	(let ((elem (pick s)))
+	  (cons elem (set->list ((residue elem) s)))))
+    ))
+
+;; How to representing set?
+;;
+
+(define for-one
+  (lambda (pred found-proc not-found-proc)
+    (letrec ((test
+	      (lambda (s)
+		(if (empty-set? s)
+		    (not-found-proc)
+		    (let ((v (pick s)))
+		      (if (pred v)
+			  (found-proc v)
+			  (test ((residue v) s))))))))
+      test)))
 
 
 
@@ -310,9 +387,41 @@
 ((there-exists2 even?) (make-set 1 3 5 7 8))
 
 
+;;((set-equal (list->set '(a b a b)))
+;; (list->set '(b a a)))
 
+(define set1 (list->set '(a b a b)))
+(set? set1)
 
+;; ((element 'a) (list->set '(a b c)))
+((set-equal 'a) (list->set '(a b)))
+((both set?) (list->set '(a b a b)) (list->set '(b a a)))
+;;((subset (list->set '(a b a b))) (list->set '(b a a)))
+;; ((set-equal (list->set '(a b a b)))
+;;  (list->set '(b a a)))
+(define set-a (list->set '(a b a b)))
+(define set-b (list->set '(b a a)))
+(define set-set (make-set (list->set '(a))
+			  (list->set '(a a))
+			  (list->set '(a a a))))
+			  
+;;((superset set-a) set-b)
+set-a
+((neither set?) set-a set-b)
+((both set?) set-a set-b)
+set-b
+;; ((superset set-set) set-b)
 
-
-
+;;((contains set-a) set-b)
+;;((element set-a) set-set)
+((none  set?) set-set)
+(pick set-set)
+(pick set-set)
+(pick set-set)
+((there-exists set?) set-set)
+;; ((set-equal set-a) (pick set-set))
+(union (make-set 1 1 2 3 4)
+       (make-set 3 4 4 5 6 6))
+(intersection (make-set 1 2 3 3 4 5)
+	      (make-set 3 4 4 5 6 7))
 

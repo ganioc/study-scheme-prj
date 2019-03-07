@@ -60,3 +60,26 @@
 (define one?
   (lambda (x)
     (not (zero? x))))
+
+(define member?
+  (lambda (item ls)
+    (cond
+     ((null? ls) #f)
+     (else (or (equal? (car ls) item)
+	       (member? item (cdr ls)))))
+    ))
+
+(define compose
+  (lambda (f g)
+    (lambda (x)
+      (f (g x)))
+    ))
+
+(define remove-1st
+  (lambda (item ls)
+    (cond
+     ((null? ls) '())
+     ((equal? (car ls) item) (cdr ls))
+     (else (cons (car ls) (remove-1st item (cdr ls)))))
+    ))
+
