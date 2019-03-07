@@ -133,6 +133,12 @@
       (helper s1))
     ))
 
+(define symmetric-difference
+  (lambda (s1 s2)
+    (union (difference s1 s2)
+	   (difference s2 s1))
+    ))
+
 (define set-builder
   (lambda (pred base-set)
     (letrec
@@ -190,8 +196,6 @@
 	  (cons elem (set->list ((residue elem) s)))))
     ))
 
-
-
 (define empty-set?
   (lambda (s)
     (eq? s the-empty-set)))
@@ -208,10 +212,6 @@
 	  (list-ref ls (random (length ls)))))
     ))
 
-;; (define remove-1st
-;;   (lambda (elem ls)
- 
-
 (define residue
   (lambda (elem)
     (lambda (s)
@@ -221,13 +221,118 @@
 	 (else (cons set-tag ls)))))
     ))
 
-;; P277
+;; P277, adjoin set
 (define adjoin
   (lambda (elem s)
     (cond
      ((member? elem (cdr s)) s)
      (else (cons set-tag (cons elem (cdr s)))))
     ))
+(define map-set
+  (lambda (pred s)
+    (if (empty-set? s)
+	(make-set the-empty-set)
+	(letrec ((item (pick s)))
+	  (adjoin (pred item) (map-set pred ((residue item) s)))))
+    ))
+
+;; power-set
+(define power-set
+  (lambda (s)
+    (if (empty-set? s)
+	(make-set the-empty-set)
+	(let* ((a (pick s))
+	       (rest ((residue a) s)))
+ 	  ;; (writeln "a:" a " rest:" rest)
+	  ;; (newline)
+	  (union
+	   (power-set rest)
+	   (map-set (lambda (x)
+		  (adjoin a x))
+		(power-set rest)))))
+    ))
+
+(define power-ls2
+  (lambda (ls)
+    (if (null? ls)
+	'(())
+	(append
+	 (map (lambda (x)
+		(cons (car ls) x))
+	      (power-ls2 (cdr ls)))
+	 (power-ls (cdr ls))))
+    ))
+
+;; Is this the correct way of doing this?
+(define power-ls
+  (lambda (ls)
+    (if (null? ls)
+	'(())
+	(let ((rest (power-ls (cdr ls))))
+	  (append
+	   rest
+	   (map (lambda (x)
+		  (cons (car ls) x))
+		rest))))
+    ))
+	  
+	  
+;; (define power-ls
+;;   (lambda (ls)
+;;     ;;(writeln 'power-ls))
+;;     (writeln "power-ls:" ls)
+;;     (newline)
+;;     (cond
+;;      ((null? ls) '())
+;;      ((pair? ls)
+;;       (if (null? (cdr ls))
+;; 	  (list (car ls))
+;; 	  (append
+;; 	   (begin
+;; 	     (writeln "append1:" (cdr ls))
+;; 	     (newline)
+;; 	     (map (lambda (x)
+;; 		    (cons (car ls) x))
+;; 		  (power-ls (cdr ls))))
+;; 	   (begin
+;; 	     (writeln "append2:" (cdr ls))
+;; 	     (newline)
+;; 	     (power-ls (cdr ls))))))
+;;       (else
+;;        (list ls)))
+;;     ))
+    ;; (if (null? ls)
+    ;; 	'()
+    ;; 	(if (null? (cdr ls))
+    ;; 	    (begin
+    ;; 	      (writeln "car ls:" (car ls))
+    ;; 	      (newline)
+    ;; 	      (list (car ls))
+    ;; 	      )
+    ;; 	    (append
+    ;; 	     (begin
+    ;; 	       (writeln "append1:" (car ls) (cdr ls))
+    ;; 	       (newline)
+    ;; 	       (map (lambda (x)
+    ;; 		      (cons (car ls)))
+    ;; 		    (power-ls (cdr ls))))
+    ;; 	     (begin
+    ;; 	       (writeln "append2:" (cdr ls))
+    ;; 	       (newline)
+    ;; 	       (power-ls (cdr ls))))))
+		  
+    ;; (if (null? ls)
+    ;; 	'()
+    ;; 	(let ((rst (power-ls (cdr ls))))
+    ;; 	  (writeln "rst:" rst)
+    ;; 	  (newline)
+    ;; 	  (append (map
+    ;; 		   (lambda (x)
+    ;; 		     (cons (car ls) x))
+    ;; 		   rst)
+    ;; 		  rst)))))
+
+
 
 (define make-op
   (lambda (x y)
@@ -303,6 +408,9 @@
 (difference (make-set 1 1 2 3 3 4 5)
 	    (make-set 3 4 4 5 6 7))
 
+(symmetric-difference (make-set 1 1 2 3 3 4 5)
+	    (make-set 3 4 4 5 6 7))
+
 (set-map cardinal (make-set (list->set '(a b c))
 			    (list->set '(a b a))
 			    (list->set '(a a a))
@@ -313,3 +421,63 @@
 			       (list->set '(c d e f))))
 
 
+(make-set (list->set '(a b c))
+			    (list->set '(a b a))
+			    (list->set '(a a a))
+			    (list->set '()))
+
+(writeln "power-set")
+
+;;(power-set (make-set '()))
+(make-set '())
+the-empty-set
+(make-set 'a 'b 'c)
+(make-set (make-set 'a 'b 'c)
+	  the-empty-set
+	  (make-set 'a)
+	  (make-set 'b)
+	  (make-set 'a 'b))
+
+(list-ref '(a b c) 0)
+(length '(a b c))
+
+(power-set (make-set 'a 'b 'c))
+
+
+(map (lambda (x)
+       (cons 'x x))
+     '(a b c))
+
+(append '( 1 2 3) '(3 4))
+
+(null? '(a))
+(null? (cdr '(a)))
+(null? (car '(a)))
+(car '(a))
+
+
+(pair? (list 'a))
+
+(append (map (lambda (x)
+	       (cons 'x x)) '(a b c))
+	'((1 2 3 4) (8 9)))
+
+;;(power-ls '(a b c))
+(power-ls '(a))
+(power-ls '(a b))
+(power-ls '(a b c))
+(power-ls2 '(a b c))
+;; (power-set '(a b c))
+
+(make-set the-empty-set)
+(map-set (lambda (x)
+	   (make-set 'x x))
+	 (make-set 'a 'b 'c))
+;;(power-set (make-set 'a 'b 'c))
+(make-set 'a)
+(adjoin  'a  (make-set 'c))
+
+(union (make-set (make-set 'a) (make-set 'b)) (make-set 'c 'd))
+
+(power-set (make-set 'a 'b))		     
+(power-set (make-set 'a 'b 'c))
