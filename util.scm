@@ -69,11 +69,15 @@
 	       (member? item (cdr ls)))))
     ))
 
+;; (define compose
+;;   (lambda (f g)
+;;     (lambda (x)
+;;       (f (g x)))
+;;     ))
 (define compose
   (lambda (f g)
-    (lambda (x)
-      (f (g x)))
-    ))
+    (lambda args
+      (f (apply g args)))))
 
 (define remove-1st
   (lambda (item ls)
@@ -83,3 +87,8 @@
      (else (cons (car ls) (remove-1st item (cdr ls)))))
     ))
 
+(define singleton-list?
+  (lambda (ls)
+    (and (pair? ls) (null? (cdr ls)))
+    ))
+		     

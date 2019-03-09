@@ -277,63 +277,29 @@
     ))
 	  
 	  
-;; (define power-ls
-;;   (lambda (ls)
-;;     ;;(writeln 'power-ls))
-;;     (writeln "power-ls:" ls)
-;;     (newline)
-;;     (cond
-;;      ((null? ls) '())
-;;      ((pair? ls)
-;;       (if (null? (cdr ls))
-;; 	  (list (car ls))
-;; 	  (append
-;; 	   (begin
-;; 	     (writeln "append1:" (cdr ls))
-;; 	     (newline)
-;; 	     (map (lambda (x)
-;; 		    (cons (car ls) x))
-;; 		  (power-ls (cdr ls))))
-;; 	   (begin
-;; 	     (writeln "append2:" (cdr ls))
-;; 	     (newline)
-;; 	     (power-ls (cdr ls))))))
-;;       (else
-;;        (list ls)))
-;;     ))
-    ;; (if (null? ls)
-    ;; 	'()
-    ;; 	(if (null? (cdr ls))
-    ;; 	    (begin
-    ;; 	      (writeln "car ls:" (car ls))
-    ;; 	      (newline)
-    ;; 	      (list (car ls))
-    ;; 	      )
-    ;; 	    (append
-    ;; 	     (begin
-    ;; 	       (writeln "append1:" (car ls) (cdr ls))
-    ;; 	       (newline)
-    ;; 	       (map (lambda (x)
-    ;; 		      (cons (car ls)))
-    ;; 		    (power-ls (cdr ls))))
-    ;; 	     (begin
-    ;; 	       (writeln "append2:" (cdr ls))
-    ;; 	       (newline)
-    ;; 	       (power-ls (cdr ls))))))
-		  
-    ;; (if (null? ls)
-    ;; 	'()
-    ;; 	(let ((rst (power-ls (cdr ls))))
-    ;; 	  (writeln "rst:" rst)
-    ;; 	  (newline)
-    ;; 	  (append (map
-    ;; 		   (lambda (x)
-    ;; 		     (cons (car ls) x))
-    ;; 		   rst)
-    ;; 		  rst)))))
+(define select-by-cardinal
+  (lambda (num)
+    (letrec ((helper
+	      (lambda (s)
+		(writeln "helper")
+		(newline)
+		(if (empty-set? s)
+		    the-empty-set
+		    (let* ((a (pick s))
+			   (rest ((residue a) s)))
+		      (if (= num (cardinal a))
+			  (union (make-set a) (helper rest))
+			  (helper rest)))
+		))))
+      
+      helper)))
 
 
 
+
+;; ordered pair
+
+;; defined by set
 (define make-op
   (lambda (x y)
     (make-set (make-set x) (make-set x y))
@@ -378,6 +344,17 @@
   (lambda (op)
     (cadr op)))
 
+(define cartesian-product
+  (lambda (s1 s2)
+    (if (empty-set? s1)
+	the-empty-set
+	(let ((elem (pick s1)))
+	  (union
+	   (set-map (lambda (x)
+		      (make-op elem x)) s2)
+	   (cartesian-product
+	    ((residue elem) s1) s2))))
+    ))
 
 
 
@@ -481,3 +458,13 @@ the-empty-set
 
 (power-set (make-set 'a 'b))		     
 (power-set (make-set 'a 'b 'c))
+
+((select-by-cardinal 2)
+ (make-set (make-set 'a)
+	   (make-set 'a 'b)
+	   (make-set 'a 'b 'c)
+	   (make-set 'b 'c)
+	   (make-set 'b)))
+
+(cartesian-product (make-set 'a 'b 'c)
+		   (make-set 'd 'e))
