@@ -92,3 +92,120 @@
     (and (pair? ls) (null? (cdr ls)))
     ))
 		     
+(define merge
+  (lambda (sorted-ntpl1 sorted-ntpl2)
+    (cond
+     ((null? sorted-ntpl1) sorted-ntpl2)
+     ((null? sorted-ntpl2) sorted-ntpl1)
+     ((< (car sorted-ntpl1) (car sorted-ntpl2))
+      (cons (car sorted-ntpl1)
+	    (merge (cdr sorted-ntpl1) sorted-ntpl2)))
+     (else
+      (cons (car sorted-ntpl2)
+	    (merge sorted-ntpl1 (cdr sorted-ntpl2)))))
+    ))
+
+(define set-tag "set")
+(define the-empty-set (cons set-tag '()))
+(define empty-set?
+  (lambda (s)
+    (eq? s the-empty-set)))
+(define set?
+  (lambda (arg)
+    (and (pair? arg) (eq? (car arg) set-tag))))
+
+;; 4/
+(define pick
+  (lambda (s)
+    (let ((ls (cdr s)))
+      (if (null? ls)
+	  (error "pick: The set is empty.")
+	  (list-ref ls (random (length ls)))))
+    ))
+
+;; 5/
+;; What is remove?
+(define residue
+  (lambda (elem)
+    (lambda (s)
+      (let ((ls (remove2 elem (cdr s))))
+	(cond
+	 ((null? ls) the-empty-set)
+	 (else (cons set-tag ls)))))
+    ))
+
+;; 6/
+(define adjoin
+  (lambda (elem s)
+    (cons set-tag (cons elem (cdr s)))
+    ))
+
+
+(define make-set
+  (lambda args
+    (letrec
+	((list-make-set
+	  (lambda (args-list)
+	    (if (null? args-list)
+		the-empty-set
+		(adjoin
+		 (car args-list)
+		 (list-make-set (cdr args-list)))))))
+      (list-make-set args))))
+
+(define remove2
+  (lambda (item ls)
+    (letrec ((helper
+	      (lambda (item ls)
+		(cond
+		 ((null? ls) '())
+		 (else
+		  (if (= item (car ls))
+		      (cdr ls)
+		      (cons (car ls)
+			    (helper item (cdr ls)))))))))
+      (helper item ls))
+    ))
+
+(define list->set
+  (lambda (ls)
+    (apply make-set ls)))
+
+(define set->list
+  (lambda (s)
+    (if (empty-set? s)
+	'()
+	(let ((elem (pick s)))
+	  (cons elem (set->list ((residue elem) s)))))
+    ))
+
+(define none
+  (lambda (pred)
+    (letrec
+	((test
+	  (lambda (s)
+	    (or (empty-set? s)
+		(let ((elem (pick s)))
+		  (and (not (pred elem))
+		       (test ((residue elem) s))))))))
+      test)))
+  
+
+(define for-all
+  (lambda (pred)
+    (none (compose not pred))
+    ))
+
+(define 1st
+  (lambda (ls)
+    (car ls)))
+
+(define 2nd
+  (lambda (ls)
+    (cadr ls)))
+(define 3rd
+  (lambda (ls)
+    (caddr ls)))
+(define 4th
+  (lambda (ls)
+    (cadddr ls)))

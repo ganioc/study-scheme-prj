@@ -138,7 +138,88 @@
 		 (loop (add1 i))))))))
 	(loop 0)))
     ))
- 
+(define vector-view
+  (lambda (vec)
+    (let ((size (vector-length vec)))
+      (letrec
+	  ((loop
+	    (lambda (i)
+	      (cond
+	       ((= size 0) (writeln "< >"))
+	       ((= size 1) (writeln "<" (vector-ref vec 0) ">"))
+	       ((= i 0) (begin
+			  (writeln "<" (vector-ref vec i) ",")
+			  (loop (add1 i))))
+	       ((= i (- size 1)) (begin
+				   (writeln (vector-ref vec i) ">")))
+	       (else
+		(begin
+		  (writeln (vector-ref vec i) ",")
+		  (loop (add1 i))))))))
+	(loop 0)))
+    ))
+
+(define vector-linear-search
+  (lambda (vec item)
+    (let ((size (vector-length vec)))
+      (letrec
+	  ((loop
+	    (lambda (i)
+	      (cond
+	       ((= i size) -1)
+	       ((equal? item (vector-ref vec i))
+		i)
+	       (else (loop (add1 i)))))))
+	(loop 0)))
+    ))
+
+(define matrix-generator
+  (lambda (gen-proc)
+    (lambda (nrows ncols)
+      (let ((size (* nrows ncols)))
+	(let ((vec-gen-proc
+	       (lambda (k)
+		 (if (< k size)
+		     (gen-proc (quotient k ncols)
+			       (remainder k ncols))
+		     ncols))))
+	  ((vector-generator vec-gen-proc)
+	   (add1 size)))))
+    ))
+
+(define make-zero-matrix
+  (matrix-generator (lambda (i j) 0)))
+
+(define row-of
+  (lambda (mat)
+    (let ((mat-of (matrix-ref mat))
+	  (number-of-columns (num-cols mat)))
+      (lambda (i)
+	(let ((gen-proc (lambda (j)
+			  (mat-ref i j))))
+	  ((vector-generator gen-proc) number-of-columns))))
+    ))
+
+(define column-of
+  (lambda (mat)
+    (let ((mat-ref (matrix-ref mat))
+	  (number-of-rows (num-rows mat)))
+      (lambda (j)
+	(let ((gen-proc (lambda (i)
+			  (mat-ref i j))))
+	  ((vector-generator gen-proc) number-of-rows))))
+    ))
+
+(define matrix-transpose
+  (lambda (mat)
+    (let ((mat-ref (matrix-ref mat)))
+      (let ((gen-proc (lambda (i j) (mat-ref j i))))
+	((matrix-generator gen-proc)
+	 (num-cols mat)
+	 (num-rows mat))))
+    ))
+
+
 ;; test -----------------------------------
 (writeln "-----------------------------------")
 '#(10 u (+ 2 3) "Mary")
@@ -187,3 +268,21 @@ v1
 
 ((successive-powers 2) 8)
 ((successive-powers 3) 5)
+(vector-view (vector 10 20 30))
+(vector-view (vector 1 2 3 4 5 6 7 8 9 10))
+
+(define v1 (vector 1 2 3 4))
+(define v2 (vector-copy v1))
+
+(eq? v1 v2)
+(equal? v1 v2)
+(eqv? v1 v2)
+(eq? v1 v2)
+(eq? v1 v1)
+
+(vector-linear-search '#(g n p r a d l b s) 'a)
+(vector-linear-search '#(29 13 96 -5 24 11 9 -15 0 2) 11)
+
+
+((matrix-generator (lambda (i j) 0)) 2 2)
+(make-zero-matrix 2 3)
