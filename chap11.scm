@@ -400,7 +400,7 @@
 	(case (1st msg)
 	  ((type) "bucket")
 	  ((lookup)
-	   (let ((key (2nd msg)) ((succ 3rd msg))
+	   (let ((key (2nd msg)) (succ (3rd msg))
 		 (fail (4th msg)))
 	     (lookup key table (lambda (pr)
 				 (succ (cdr pr)))
@@ -417,9 +417,77 @@
 			 (set! table (cons pr table)))))))
 	  (else (delegate base-object msg)))))))
 
+;; word count frequency
+(define word-frequency
+  (lambda (string-list)
+    (let ((b (bucket-maker)))
+      (for-each
+       (lambda (s) (send b 'update! s add1 (lambda (s) 1)))
+       string-list)
+      b)))
+
+(define hash-table-maker
+  (lambda (size hash-fn)
+    (let ((v ((vector-generator
+	       (lambda (i) (bucket-maker))) size)))
+      (lambda msg
+	(case (1st msg)
+	  ((type) "hash table")
+	  (else
+	   (delegate (vector-ref v (hash-fn (2nd msg))) msg)))))))
+
+(define theater-maker
+  (lambda (capacity)
+    (let ((ticket-line (queue-maker))
+	  (vacancies (gauge-maker capacity add1 sub1)))
+      (lambda msg
+	(case (1st msg)
+	  ((type) "theater")
+	  ((enter!) (if (zero? (send vacancies 'show))
+			(display "doors closed")
+			(begin
+			  (send ticket-line 'dequeue!)
+			  (send vacancies 'down))))
+	  ((leave!) (if (< (send vacancies 'show) capacity)
+			(send vacancies 'up!)
+			(error "leave!: The theater is empty.")))
+	  ((show) (send vacancies 'show))
+	  (else (delegate ticket-line msg)))))
+    ))
+
+(define combine
+  (lambda (f g)
+    (lambda msg
+      (let ((f-try (delegate f msg)))
+	(if (eq? invalid-method-name-indicator f-try)
+	    (delegate g msg)
+	    f-try)))
+    ))
+
+(define cartesian-point-maker
+  (lambda (x-coord y-coord)
+    (lambda message
+      (let ((self (car message)) (msg (cdr message)))
+	(writeln 'function-hello)
+	(newline)
+	(display (1st msg))
+	(case (1st msg)
+	  ((type) "Cartesian point")
+	  (else (delegate base-object message)))
+	))
+	;; (case (1st msg)
+	;;   ((type) "Cartesian point")
+	;;   ((distance) (sqrt (+ (square x-coord) (square y-coord))))
+	;;   ((closer?) (< (send self 'distance)
+	;; 		(send (2nd msg) 'distance)))
+	;;   (else (delegate base-object message)))))
+    ))
+
+
+
 
 				    
-
+;; ---------------------------------------------------------------
 ;; test, p419
 (4th '(1 2 3 4 5 6))
 (define f (lambda (x) (+ x 10)))
@@ -493,4 +561,33 @@
 
 (define b (bucket-maker))
 (send b 'lookup 'a (lambda (x) x) (lambda () 'no))
+(send b 'update! 'a (lambda (x) (add1 x)) (lambda (x) 0))
+(send b 'lookup 'a (lambda (x) x) (lambda () 'no))
+
+(send b 'update! 'a (lambda (x) (add1 x)) (lambda (x) 0))
+(send b 'lookup 'a (lambda (x) x) (lambda () 'no))
+
+(send b 'update! 'q (lambda (x) (+ 2 x)) (lambda (x) 1000))
+(send b 'lookup 'q (lambda (x) x) (lambda () 'no))
+
+(define texts '("four" "score" "and" "seven" "four" "four" "score"))
+(define word-frequency-bucket (word-frequency texts))
+
+(display texts)
+
+(map
+ (lambda (s)
+   (cons s (send word-frequency-bucket 'lookup s
+		 (lambda (v) v)
+		 (lambda () 0))))
+ '("four" "and" "the"))
+
+(define cp1 (cartesian-point-maker 3.0 4.0))
+;; (send cp1 'distance)
+;; (send cp1 'type)
+;; (cp1 (cons 'type 'content))
+(send cp1 'type 'type)
   
+
+
+      
