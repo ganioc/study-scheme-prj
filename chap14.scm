@@ -76,10 +76,31 @@
 ;; var to val, one to one correspondence
 
 (define-syntax my-letrec
-  ((my-letrec ((var val) ...) expr1 expr2 ...)
-   (let ((var "any") ...)
-     (set! var val) ...
-     expr1 expr2 ...)))
+  (syntax-rules ()
+    ((my-letrec ((var val) ...) expr1 expr2 ...)
+     (let ((var "any") ...)
+       (set! var val) ...
+       expr1 expr2 ...))))
+
+(define or-proc
+  (lambda (th-list)
+    (cond
+     ((null? th-list) #f)
+     (else (let ((v (thaw (car th-list))))
+	     (if v v (or-proc (cdr th-list))))))
+    ))
+
+(define or-transformer
+  (lambda (code)
+    (list 'or-proc
+	  (cons 'list
+		(map (lambda (e) (list 'freeze e))
+		     (cdr code))))))
+
+(define-syntax or
+  (syntax-rules ()
+    ((or code ...) (or-proc (list (freeze code) ...)))
+    ))
 
 
 
@@ -134,6 +155,9 @@
    odd?))
 
 (my-odd? 2)
+(my-odd? 19)
+
+(freeze-transformer '(freeze (cons 'a '(b c))))
 
  
 
