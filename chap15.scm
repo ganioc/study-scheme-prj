@@ -79,10 +79,10 @@
 (cdr del-list)
 (car ((force (cdr del-list))))
 (display 'test-delayed-list-car)
-(delayed-list-car ((delayed-list-cdr del-list)))
+;; (delayed-list-car ((delayed-list-cdr del-list)))
 ;; (car (force (cdr del-list)))
-(delayed-list-null? ((delayed-list-cdr ((delayed-list-cdr del-list)))))
-((force (delay 'a)))
+;; (delayed-list-null? ((delayed-list-cdr ((delayed-list-cdr del-list)))))
+;; ((force (delay 'a)))
 
 
 ;; (sum-until-first-7 (random-2-to-12-list 100))
@@ -94,3 +94,42 @@
 ;; ;; (delayed-list-car (delayed-list-cdr del-list))
 ;; (delayed-list-cdr del-list)
 ;; (delayed-list-car (delayed-list-cdr del-list))
+
+;; file operation
+(define port-in (open-input-file "input1.dat"))
+(read port-in)
+(read port-in)
+(read port-in)
+(read port-in)
+(read port-in)
+(close-input-port port-in)
+
+(let ((p (open-input-file "input2.dat")))
+  (letrec
+      ((add-items
+	(lambda (sum)
+	  (let ((item (read p)))
+	    (cond
+	     ((eof-object? item)
+	      (close-input-port p)
+	      sum)
+	     (else
+	      (add-items (+ item sum))))))))
+  (add-items 0)))
+
+(let ((p (open-input-file "input3.dat")))
+  (letrec
+      ((reader (lambda (ch)
+		 (if (eof-object? ch)
+		     '()
+		     (cons ch (reader (read-char p)))))))
+    (let ((ans (reader (read-char p))))
+      (close-input-port p)
+      ans)))
+
+(let ((port-out (open-output-file "output.dat")))
+  (display "This is an output test." port-out)
+  (newline port-out)
+  (close-output-port port-out))
+    
+			       
